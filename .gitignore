@@ -16,3 +16,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# Local only
+content.db
+.claude/settings.local.json

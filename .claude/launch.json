@@ -1,0 +1,51 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Digest Preview Server",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8888"],
+      "port": 8888
+    },
+    {
+      "name": "Full Pipeline",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/run_pipeline.py"]
+    },
+    {
+      "name": "Init Database",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/init_db.py"]
+    },
+    {
+      "name": "Fetch Twitter",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/fetch_twitter.py"]
+    },
+    {
+      "name": "Fetch News",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/fetch_news.py"]
+    },
+    {
+      "name": "Transcribe Media",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/transcribe_media.py"]
+    },
+    {
+      "name": "Extract Themes",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/extract_themes.py"]
+    },
+    {
+      "name": "Generate Posts",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/generate_posts.py"]
+    },
+    {
+      "name": "Export to Sheets",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["execution/export_to_sheets.py"]
+    }
+  ]
+}
