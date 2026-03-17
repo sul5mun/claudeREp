@@ -50,8 +50,14 @@ def get_sheets_service():
                     f"Google credentials not found at '{CREDENTIALS_PATH}'. "
                     "Download it from Google Cloud Console → APIs & Services → Credentials."
                 )
-            flow  = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=0)
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+            auth_url, _ = flow.authorization_url(prompt="consent")
+            print("\n[AUTH] Open this URL in your browser to authorize:\n")
+            print(auth_url)
+            print("\nAfter authorizing, paste the authorization code here:")
+            code = input("> ").strip()
+            flow.fetch_token(code=code)
+            creds = flow.credentials
 
         with open(TOKEN_PATH, "w") as f:
             f.write(creds.to_json())
