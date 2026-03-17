@@ -1,0 +1,261 @@
+"""
+export_to_html.py
+Export today's digest to a self-contained HTML file in .tmp/
+
+Output: .tmp/digest_YYYY-MM-DD.html
+"""
+
+import json
+import sqlite3
+from datetime import date
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
+DB_PATH  = Path(".tmp/pipeline.db")
+OUT_DIR  = Path(".tmp")
+
+
+def build_html(digest: dict, themes: list) -> str:
+    today_str   = digest["date"]
+    top_story   = digest["summary"] or ""
+    tweet       = digest["tweet_draft"] or ""
+    linkedin    = digest["linkedin_draft"] or ""
+
+    # LinkedIn: newlines -> <br>
+    linkedin_html = linkedin.replace("\n\n", "</p><p>").replace("\n", "<br>")
+    linkedin_html = f"<p>{linkedin_html}</p>"
+
+    themes_html = ""
+    for t in themes:
+        sources_html = ""
+        for s in t.get("sources", []):
+            label = s if isinstance(s, str) else s.get("author", s.get("source", ""))
+            url   = "#" if isinstance(s, str) else s.get("url", "#")
+            sources_html += f'<li><a href="{url}" target="_blank">{label}</a></li>'
+        themes_html += f"""
+        <div class="theme">
+          <h3>{t.get("title","")}</h3>
+          <p>{t.get("summary","")}</p>
+          {"<ul class='sources'>" + sources_html + "</ul>" if sources_html else ""}
+        </div>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Digest — {today_str}</title>
+  <style>
+    *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f5f7;
+      color: #1a1a2e;
+      padding: 2rem 1rem;
+    }}
+
+    .container {{
+      max-width: 760px;
+      margin: 0 auto;
+    }}
+
+    header {{
+      margin-bottom: 2rem;
+    }}
+
+    header h1 {{
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #6b7280;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }}
+
+    header p.date {{
+      font-size: 2rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-top: .25rem;
+    }}
+
+    .top-story {{
+      background: #1a1a2e;
+      color: #fff;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      line-height: 1.6;
+    }}
+
+    .top-story span {{
+      display: block;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: .5rem;
+    }}
+
+    section {{
+      margin-bottom: 2rem;
+    }}
+
+    section h2 {{
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: .5rem;
+    }}
+
+    .theme {{
+      background: #fff;
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: .75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }}
+
+    .theme h3 {{
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: .4rem;
+    }}
+
+    .theme p {{
+      font-size: .9rem;
+      color: #4b5563;
+      line-height: 1.55;
+    }}
+
+    .sources {{
+      margin-top: .6rem;
+      padding-left: 1.1rem;
+      font-size: .8rem;
+      color: #6b7280;
+    }}
+
+    .sources a {{
+      color: #6b7280;
+      text-decoration: none;
+    }}
+
+    .sources a:hover {{
+      text-decoration: underline;
+    }}
+
+    .post-box {{
+      background: #fff;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      font-size: .95rem;
+      line-height: 1.65;
+      color: #374151;
+      white-space: pre-wrap;
+    }}
+
+    .post-box p {{
+      margin-bottom: .75rem;
+    }}
+
+    .post-box p:last-child {{
+      margin-bottom: 0;
+    }}
+
+    .tweet-box {{
+      background: #1da1f2;
+      color: #fff;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }}
+
+    footer {{
+      text-align: center;
+      font-size: .75rem;
+      color: #9ca3af;
+      margin-top: 3rem;
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <h1>AI Daily Digest</h1>
+      <p class="date">{today_str}</p>
+    </header>
+
+    <div class="top-story">
+      <span>Top Story</span>
+      {top_story}
+    </div>
+
+    <section>
+      <h2>Key Themes</h2>
+      {themes_html}
+    </section>
+
+    <section>
+      <h2>Tweet</h2>
+      <div class="tweet-box">{tweet}</div>
+    </section>
+
+    <section>
+      <h2>LinkedIn Post</h2>
+      <div class="post-box">{linkedin_html}</div>
+    </section>
+
+    <footer>Generated by AI Content Pipeline</footer>
+
+  </div>
+</body>
+</html>"""
+
+
+def export_to_html():
+    today = date.today().isoformat()
+    conn  = sqlite3.connect(DB_PATH)
+    c     = conn.cursor()
+
+    c.execute("""
+        SELECT id, date, themes, summary, tweet_draft, linkedin_draft
+        FROM digests WHERE date = ? ORDER BY id DESC LIMIT 1
+    """, (today,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        print("[OK] HTML Export: no digest found for today — skipping")
+        return
+
+    digest = {
+        "id": row[0], "date": row[1], "themes": row[2],
+        "summary": row[3], "tweet_draft": row[4], "linkedin_draft": row[5],
+    }
+
+    themes = json.loads(digest["themes"]) if digest["themes"] else []
+
+    html = build_html(digest, themes)
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = OUT_DIR / f"digest_{today}.html"
+    out_path.write_text(html, encoding="utf-8")
+
+    print(f"[OK] HTML Export: {out_path}")
+
+
+if __name__ == "__main__":
+    export_to_html()

@@ -31,6 +31,7 @@ STEPS = [
     ("Extract Themes",       "execution/extract_themes.py",            True),
     ("Generate Posts",       "execution/generate_posts.py",            True),
     ("Export to Sheets",     "execution/export_to_sheets.py",          False),  # Optional: needs Google credentials
+    ("Export to HTML",       "execution/export_to_html.py",            False),  # Generates .tmp/digest_YYYY-MM-DD.html
 ]
 
 
